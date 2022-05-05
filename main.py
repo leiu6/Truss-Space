@@ -3,6 +3,7 @@
 
 
 import solver as s
+import numpy as np
 
 
 def main():
@@ -21,7 +22,27 @@ def main():
 
     gsm = s.line_elem_global_stiffness_matrix([(1, 2), (3, 2), (1, 3), (4, 3)], [k1, k2, k3, k4])
 
-    print(gsm)
+    F = np.array([
+        [0],
+        [0],
+        [20000],
+        [0],
+        [0],
+        [-25000],
+        [0],
+        [0]
+    ])
+
+    boundary_conditions = [
+        (0, 0),
+        ('free', 0),
+        ('free', 'free'),
+        (0, 0)
+    ]
+
+    gsm, F = s.line_elem_boundary_conditions(gsm, F, boundary_conditions)
+
+    print(gsm, F)
 
 
 if __name__ == "__main__":

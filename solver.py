@@ -64,7 +64,6 @@ def line_elem_global_stiffness_matrix(nodes, stiffness_matrices):
         g_dof = [x - 1 for x in g_dof]
 
         # create mini 2x2 matrices
-        print(k)
         top_left = k[0:2, 0:2]
         top_right = k[0:2, 2:4]
         bottom_left = k[2:4, 0:2]
@@ -93,3 +92,53 @@ def line_elem_horizontal_dof(node):
     # node: the node number of the line element
 
     return 2 * node - 1
+
+
+def line_elem_boundary_conditions(gsm, F, boundary_conditions):
+    # removes the rows and columns of the global stiffness in accordance which the nodes that do not have any
+    # displacement in a given direction due to their boundary conditions such as fixed supports, rolling supports, etc.
+    #
+    # gsm: the original global stiffness matrix that we will remove rows from
+    # F: column vector of the applied forces to the structure. This will also have elements removed
+    # boundary_conditions: a list of tuples in the following format:
+    #   (dx, dy)
+    #   -   In order from 1 to # of nodes
+    #   -   The displacement constraint at that node in the x or y direction
+    #       i.e: ('free', 0): the node is constrained to only move in the x direction (rolling support)
+    #            (0, 0): the node cannot move in either direction (fixed support)
+
+    for node, bc in enumerate(boundary_conditions):
+        # compute degrees of freedom to be deleted
+        dof_h = line_elem_horizontal_dof(node + 1)
+        dof_v = line_elem_vertical_dof(node + 1)
+
+        # convert to indices
+        i_h = dof_h - 1
+        i_v = dof_v - 1
+
+        if bc[0] == 0:
+            # horizontal delete
+            gsm[i_h, :] = np.nan * np.ones(gsm[i_h, :].size)
+
+            # horizontal delete for F
+            F[i_h] = np.nan * np.ones((1, 1))
+
+            # vertical delete
+            gsm[:, i_h] = np.nan * np.ones(gsm[:, i_h].size)
+
+        if bc[1] == 0:
+            # horizontal delete
+            gsm[i_v, :] = np.nan * np.ones(gsm[i_v, :].size)
+
+            # horizontal delete for F
+            F[i_v] = np.nan * np.ones((1, 1))
+
+            # vertical delete
+            gsm[:, i_v] = np.nan * np.ones(gsm[:, i_v].size)
+
+    # now we delete any nan entries
+    gsm = gsm[:, ~np.isnan(gsm).all(axis=0)]
+    gsm = gsm[~np.isnan(gsm).all(axis=1), :]
+    F = F[F != -2147483648]  # janky workaround. FIX LATER! xD
+
+    return gsm, F
