@@ -44,7 +44,7 @@ def line_elem_global_stiffness_matrix(nodes, stiffness_matrices):
     # nodes: a list of tuples for each element: (start node, end node)
     # stiffness_matrices: a list of numpy arrays for the element stiffness matrices
 
-    dof = 2*len(nodes)  # Max degrees of freedom. Tells the size of the global stiffness matrix
+    dof = 2 * len(nodes)  # Max degrees of freedom. Tells the size of the global stiffness matrix
 
     # initialize it
     gsm = np.zeros((dof, dof))
@@ -56,9 +56,9 @@ def line_elem_global_stiffness_matrix(nodes, stiffness_matrices):
 
         # global degrees of freedom
         g_dof = np.array([line_elem_horizontal_dof(start),
-                 line_elem_vertical_dof(start),
-                 line_elem_horizontal_dof(end),
-                 line_elem_vertical_dof(end)])
+                          line_elem_vertical_dof(start),
+                          line_elem_horizontal_dof(end),
+                          line_elem_vertical_dof(end)])
 
         # subtract 1 from each so that they correspond to indices
         g_dof = [x - 1 for x in g_dof]
