@@ -2,8 +2,11 @@
 # 2D FEA Solver for Trusses
 
 
+import solver as s
+
+
 def main():
-    print("Hello World!")
+    print(s.line_elem_stiffness((1, 1), (2, 2), 20, 1))
 
 
 if __name__ == "__main__":
