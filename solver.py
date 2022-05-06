@@ -144,7 +144,7 @@ def apply_boundary_conditions(gsm, F, boundary_conditions):
             gsm[i_h, :] = np.nan * np.ones(gsm[i_h, :].size)
 
             # horizontal delete for F
-            F[i_h] = np.nan * np.ones((1, 1))
+            F[i_h] = np.nan
 
             # vertical delete
             gsm[:, i_h] = np.nan * np.ones(gsm[:, i_h].size)
@@ -154,7 +154,7 @@ def apply_boundary_conditions(gsm, F, boundary_conditions):
             gsm[i_v, :] = np.nan * np.ones(gsm[i_v, :].size)
 
             # horizontal delete for F
-            F[i_v] = np.nan * np.ones((1, 1))
+            F[i_v] = np.nan
 
             # vertical delete
             gsm[:, i_v] = np.nan * np.ones(gsm[:, i_v].size)
@@ -162,7 +162,7 @@ def apply_boundary_conditions(gsm, F, boundary_conditions):
     # now we delete any nan entries
     gsm = gsm[:, ~np.isnan(gsm).all(axis=0)]
     gsm = gsm[~np.isnan(gsm).all(axis=1), :]
-    F = F[F != -2147483648]  # janky workaround. FIX LATER! xD
+    F = F[~np.isnan(F)]
 
     return gsm, F
 
@@ -194,7 +194,7 @@ def solve_stresses(displacement, nodes, starts_ends, boundary_conditions, E):
 
     for i, trig_vector in enumerate(trig_vectors):
         L = lengths[i]
-        d = displacement_add_zeros(displacement, boundary_conditions)
+        d = np.copy(displacement)
 
         start = starts_ends[i][0]
         end = starts_ends[i][1]
@@ -271,13 +271,12 @@ def displacement_add_zeros(d, boundary_conditions):
     return np.array(new_d)
 
 
-def solve_reactions(gsm, d, boundary_conditions):
+def solve_reactions(gsm, d, boundary_conditions, F):
     # Solve for the reaction forces in the structure
     #
     # gsm: global stiffness matrix. Unmodified with no boundary conditions applied.
-    # d: displacements vector without added zeros
-
-    d = displacement_add_zeros(d, boundary_conditions)
+    # d: displacements vector
+    # F: forces vector
 
     num_nodes = len(d) / 2  # calculate total number of nodes
 
@@ -292,8 +291,8 @@ def solve_reactions(gsm, d, boundary_conditions):
         bc_list.append(bc[0])
         bc_list.append(bc[1])
 
-    for i, bc in enumerate(bc_list):
-        if bc == 'free':
-            reactions = np.delete(reactions, i)
+    # for i, bc in enumerate(bc_list):
+    #     if bc == 'free':
+    #         reactions[i] = 0
 
-    return reactions
+    return np.subtract(reactions, F)

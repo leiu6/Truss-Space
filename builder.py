@@ -17,6 +17,12 @@ class Structure:
     gsm = np.empty(shape=(0, 0))
     gsm_unmodified = np.empty(shape=(0, 0))
     F = list()
+    F_unmodified = np.empty(shape=(0, 0))
+
+    # Results storage
+    displacements = list()
+    stresses = list()
+    reactions = list()
 
     def __init__(self, E, A):
         # Constructor for Structure class
@@ -70,8 +76,11 @@ class Structure:
         # x_force: x component of force
         # y_force: y component of force
 
-        x_insert = 2*(node_number - 1)
-        y_insert = 2*(node_number)
+        x_insert = 2 * (node_number - 1)
+        y_insert = 2 * node_number
+
+        if type(self.F) is np.ndarray:
+            self.F = self.F.tolist()
 
         self.F.insert(x_insert, x_force)
         self.F.insert(y_insert, y_force)
@@ -85,6 +94,33 @@ class Structure:
         # calculations rely on it.
         self.gsm = np.copy(self.gsm_unmodified)
 
+        # Convert to Numpy array
+        self.F = np.array(self.F).astype(float)
+
+        self.F_unmodified = np.copy(self.F)
+
         # Apply boundary conditions
         self.gsm, self.F = s.apply_boundary_conditions(self.gsm, self.F, self.boundary_conditions)
 
+    def solve_displacements(self):
+        self.displacements = s.solve_displacements(self.gsm, self.F)
+        self.displacements = s.displacement_add_zeros(self.displacements, self.boundary_conditions)
+
+        return self.displacements
+
+    def solve_stresses(self):
+        self.stresses = s.solve_stresses(self.displacements,
+                                         self.nodes,
+                                         self.starts_ends,
+                                         self.boundary_conditions,
+                                         self.E)
+
+        return self.stresses
+
+    def solve_reactions(self):
+        self.reactions = s.solve_reactions(self.gsm_unmodified,
+                                           self.displacements,
+                                           self.boundary_conditions,
+                                           self.F_unmodified)
+
+        return self.reactions
